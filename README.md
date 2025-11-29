@@ -1,4 +1,4 @@
-# Vibe-Energy-Assistant – Smart Appliance Energy Optimizer
+# Vibe Energy Assistant – Smart Appliance Energy Optimizer
 
 Prototype Link: https://vibe-energy-assistant.onrender.com
 
