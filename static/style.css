@@ -1,0 +1,159 @@
+/* ===== 基础设置：整体偏灰白 + 深色文字 ===== */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f3f4f6;        /* 灰白底 */
+  color: #111827;             /* 深灰文字 */
+}
+
+/* ===== 顶部导航：深蓝渐变，更成熟 ===== */
+.app-navbar {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb); /* match ea-chat-header */
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.25);
+}
+
+/* Lightning icon in navbar: bright orange/yellow */
+.app-navbar .navbar-brand .bi-lightning-charge-fill {
+  color: #fbbf24;              /* yellow */
+  text-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
+}
+
+/* 标题颜色稍微深一点 */
+h2.fw-bold {
+  color: #111827;
+}
+
+/* ===== KPI 卡片：白底 + 细线条强调，低饱和 ===== */
+.kpi-card {
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
+  position: relative;
+}
+
+/* 顶部细色条，颜色都比较稳重 */
+.kpi-card-blue {
+  border-top: 4px solid #2563eb;    /* 蓝 */
+}
+
+.kpi-card-purple {
+  border-top: 4px solid #4b5563;    /* 灰紫，偏稳重 */
+}
+
+.kpi-card-orange {
+  border-top: 4px solid #f59e0b;    /* 柔和橙色 */
+}
+
+.kpi-card-teal {
+  border-top: 4px solid #059669;    /* 低饱和绿色 */
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.kpi-subtext {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.kpi-icon {
+  font-size: 1.3rem;
+  color: #9ca3af;
+}
+
+/* ===== 通用卡片：白底、细边、轻阴影 ===== */
+.card {
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.card-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ===== 图表区域：干净白底，更像企业报表 ===== */
+.chart-container {
+  height: 320px;
+  background: #ffffff;
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+/* ===== Chart resolution toggle (Hour / Day / Month) ===== */
+.chart-toggle-group {
+  display: inline-flex;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25);
+}
+
+.chart-toggle-btn {
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.18s ease;
+  min-width: 56px;
+}
+
+.chart-toggle-btn.active {
+  background: #ffffff;
+  color: #1e3a8a;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+}
+
+
+/* ===== Peak Usage 区域：轻微灰底 + 蓝色强调 ===== */
+.peak-item {
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.8rem;
+  background: #f9fafb;              /* 很浅的灰 */
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.peak-item:hover {
+  background: #f3f4ff;              /* 鼠标移上去一点点蓝调 */
+  border-color: #c7d2fe;
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.12);
+}
+
+.peak-day-label {
+  color: #111827;
+}
+
+.peak-badge {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+}
+
+/* 通用浅灰文字 */
+.text-muted {
+  color: #6b7280 !important;
+}

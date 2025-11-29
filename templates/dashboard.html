@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Energy Assistant Dashboard</title>
+
+  <!-- Bootstrap 5 -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"
+  >
+
+  <!-- Your main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- CHAT WIDGET STYLES (scoped with ea- prefix so no conflicts) -->
+  <style>
+    .ea-chat-toggle {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8); /* same blue gradient */
+      color: #fbbf24; /* <-- make lightning icon yellow/orange */
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.35);
+      cursor: pointer;
+      z-index: 1050;
+      font-size: 1.5rem;
+    }
+
+    .ea-chat-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.45);
+    }
+
+    .ea-chat-window {
+      position: fixed;
+      bottom: 96px;
+      right: 24px;
+      width: 360px;
+      max-height: 560px;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.45);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1040;
+      transform: translateY(120%);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease-out;
+    }
+
+    .ea-chat-window.ea-open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .ea-chat-header {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #fff;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ea-chat-header-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .ea-chat-header-text h6 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .ea-chat-header-text small {
+      font-size: 0.75rem;
+      opacity: 0.85;
+    }
+
+    .ea-chat-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      opacity: 0.9;
+    }
+
+    .ea-chat-status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .ea-chat-close {
+      margin-left: 8px;
+      color: #e5e7eb;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .ea-chat-body {
+      flex: 1;
+      background: #f3f4f6;
+      padding: 10px 10px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+    }
+
+    .ea-msg {
+      max-width: 80%;
+      padding: 8px 11px;
+      border-radius: 16px;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      position: relative;
+    }
+
+    .ea-msg-bot {
+      align-self: flex-start;
+      background: #ffffff;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    }
+
+    .ea-msg-user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ea-msg-time {
+      font-size: 0.65rem;
+      opacity: 0.6;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .ea-chat-footer {
+      border-top: 1px solid #e5e7eb;
+      background: #ffffff;
+      padding: 8px 10px;
+    }
+
+    .ea-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ea-input-wrap input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      padding: 7px 11px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .ea-input-wrap input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+
+    .ea-input-wrap button {
+      border-radius: 999px;
+      border: none;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2563eb;
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .ea-appliance-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      margin-top: 3px;
+    }
+
+    .ea-appliance-card h6 {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .ea-appliance-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .ea-appliance-item {
+      border-radius: 9px;
+      border: 1px solid #e5e7eb;
+      padding: 6px 4px;
+      font-size: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .ea-appliance-item span {
+      font-size: 1.1rem;
+    }
+
+    .ea-appliance-item strong {
+      font-weight: 500;
+    }
+
+    .ea-appliance-item.ea-selected {
+      border-color: #2563eb;
+      background: rgba(37, 99, 235, 0.08);
+    }
+
+    .ea-appliance-submit {
+      margin-top: 8px;
+      width: 100%;
+      border-radius: 9px;
+      border: none;
+      background: #2563eb;
+      color: #ffffff;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .ea-reco-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 9px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      margin-top: 4px;
+      font-size: 0.8rem;
+    }
+
+    .ea-reco-card h6 {
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .ea-reco-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .ea-reco-item span {
+      font-size: 0.9rem;
+      margin-top: 1px;
+    }
+
+    .ea-typing {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      padding: 6px 9px;
+      background: #ffffff;
+      border-radius: 12px;
+      margin-bottom: 4px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .ea-typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #9ca3af;
+      animation: ea-bounce 1.2s infinite ease-in-out;
+    }
+
+    .ea-typing-dot:nth-child(2) { animation-delay: .15s; }
+    .ea-typing-dot:nth-child(3) { animation-delay: .3s; }
+
+    @keyframes ea-bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-4px); }
+    }
+
+    @media (max-width: 576px) {
+      .ea-chat-window {
+        width: 100%;
+        right: 0;
+        bottom: 0;
+        max-height: 100%;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark app-navbar">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand fw-semibold" href="#">
+      <i class="bi bi-lightning-charge-fill me-2"></i>Energy Assistant
+    </a>
+    <span class="navbar-text small text-white-50">
+      Smart insights for your daily energy usage
+    </span>
+  </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+  <!-- Heading + account info -->
+  <div class="row mb-3">
+    <div class="col-12 col-lg-8">
+      <h2 class="fw-bold mb-1">Dashboard</h2>
+      <p class="text-muted mb-1">
+        Monitor your past consumption, forecast future usage, and spot peak days at a glance.
+      </p>
+      <p class="small text-muted mb-0">
+        <i class="bi bi-house-door me-1"></i>
+        {{ account_info.account_number }} &mdash; {{ account_info.address }}
+      </p>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card kpi-card kpi-card-blue">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="kpi-label">Total Usage (30 days)</span>
+            <i class="bi bi-graph-up-arrow kpi-icon"></i>
+          </div>
+          <h3 class="kpi-value mb-1">{{ stats.total_past }} kWh</h3>
+          <p class="kpi-subtext mb-0">Overall energy consumed</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card kpi-card kpi-card-purple">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="kpi-label">Average Daily Usage</span>
+            <i class="bi bi-speedometer2 kpi-icon"></i>
+          </div>
+          <h3 class="kpi-value mb-1">{{ stats.avg_past }} kWh</h3>
+          <p class="kpi-subtext mb-0">Per-day consumption</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card kpi-card kpi-card-orange">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="kpi-label">Peak Day</span>
+            <i class="bi bi-exclamation-triangle-fill kpi-icon"></i>
+          </div>
+          <h3 class="kpi-value mb-1">{{ stats.max_day_label }}</h3>
+          <p class="kpi-subtext mb-0">
+            {{ stats.max_day_value }} kWh
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card kpi-card kpi-card-teal">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="kpi-label">Est. Monthly Bill</span>
+            <i class="bi bi-cash-coin kpi-icon"></i>
+          </div>
+          <h3 class="kpi-value mb-1">RM {{ "%.2f" | format(stats.estimated_bill) }}</h3>
+          <p class="kpi-subtext mb-0">Based on last 30 days</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts + Peak Days -->
+  <div class="row g-3">
+    <div class="col-12 col-lg-8">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-0">Usage Trend & Forecast</h5>
+            <small class="text-muted">View by hour, day, or month</small>
+          </div>
+
+          <!-- Segmented toggle -->
+          <div class="chart-toggle-group" role="group" aria-label="Time resolution toggle">
+            <button
+              type="button"
+              class="chart-toggle-btn"
+              data-resolution="hour"
+            >
+              Hour
+            </button>
+            <button
+              type="button"
+              class="chart-toggle-btn active"
+              data-resolution="day"
+            >
+              Day
+            </button>
+            <button
+              type="button"
+              class="chart-toggle-btn"
+              data-resolution="month"
+            >
+              Month
+            </button>
+          </div>
+        </div>
+        <div class="card-body chart-container">
+          <canvas id="energyChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h6 class="mb-0">Peak Usage Days</h6>
+          <small class="text-muted">Top 3 highest consumption days</small>
+        </div>
+        <div class="card-body">
+          {% for day, value in peak_days %}
+            <div class="d-flex align-items-center justify-content-between peak-item mb-3">
+              <div>
+                <span class="fw-semibold peak-day-label">{{ day }}</span><br>
+                <small class="text-muted">Higher activity or appliance usage</small>
+              </div>
+              <span class="badge rounded-pill peak-badge fw-semibold">
+                {{ value }} kWh
+              </span>
+            </div>
+          {% endfor %}
+          <div class="mt-3 small text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            Peak days are ideal targets for shifting heavy loads (e.g. laundry, ironing)
+            if you want to reduce overall energy usage.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING CHAT BUTTON -->
+<button class="ea-chat-toggle" id="eaChatToggle" aria-label="Open Energy Assistant">
+  ⚡
+</button>
+
+<!-- CHAT WIDGET WINDOW -->
+<div class="ea-chat-window" id="eaChatWindow">
+  <div class="ea-chat-header">
+    <div class="ea-chat-header-icon">⚡</div>
+    <div class="ea-chat-header-text">
+      <h6>Energy Assistant</h6>
+      <small>Optimize your appliance usage</small>
+    </div>
+    <div class="ea-chat-status">
+      <div class="ea-chat-status-dot"></div>
+      <span>Online</span>
+    </div>
+    <div class="ea-chat-close" id="eaChatClose">
+      <i class="bi bi-x-lg"></i>
+    </div>
+  </div>
+
+  <div class="ea-chat-body" id="eaChatMessages">
+    <!-- messages + cards will be injected via JS -->
+  </div>
+
+  <div class="ea-chat-footer">
+    <div class="ea-input-wrap">
+      <input type="text" id="eaUserInput" placeholder="Ask about your energy usage...">
+      <button id="eaSendBtn">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD CHART JS -->
+<script>
+  // Data from backend (Flask should pass these)
+  const chartSources = {
+    hour: {{ hourly_chart | tojson }},
+    day: {{ daily_chart | tojson }},
+    month: {{ monthly_chart | tojson }}
+  };
+
+  let energyChart = null;
+
+  function buildEnergyChart(mode) {
+    const src = chartSources[mode];
+    if (!src) {
+      console.warn("No chart data for mode:", mode);
+      return;
+    }
+
+    const labels = src.labels;
+    const historyValues = src.history;
+    const forecastValues = src.forecast;
+
+    const ctx = document.getElementById('energyChart').getContext('2d');
+
+    // Destroy old chart if exists
+    if (energyChart) {
+      energyChart.destroy();
+    }
+
+    energyChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Past Usage (kWh)',
+            data: historyValues,
+            borderWidth: 2,
+            tension: 0.35,
+            pointRadius: 2,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.10)',
+            fill: true
+          },
+          {
+            label: 'Forecast (kWh)',
+            data: forecastValues,
+            borderWidth: 2,
+            borderDash: [6, 4],
+            tension: 0.35,
+            pointRadius: 3,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.10)',
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: { display: true },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                if (ctx.parsed.y === null) return '';
+                return `${ctx.dataset.label}: ${ctx.parsed.y} kWh`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 10
+            }
+          },
+          y: {
+            title: { display: true, text: 'kWh' },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  // Toggle buttons logic
+  const toggleButtons = document.querySelectorAll('.chart-toggle-btn');
+
+  toggleButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Update active state
+      toggleButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Build chart for selected resolution
+      const mode = btn.getAttribute('data-resolution'); // "hour" | "day" | "month"
+      buildEnergyChart(mode);
+    });
+  });
+
+  // Initial chart (default: "day")
+  buildEnergyChart('day');
+</script>
+
+
+<!-- CHAT WIDGET JS -->
+<script>
+  const eaChatToggle = document.getElementById('eaChatToggle');
+  const eaChatWindow = document.getElementById('eaChatWindow');
+  const eaChatClose  = document.getElementById('eaChatClose');
+  const eaMessages   = document.getElementById('eaChatMessages');
+  const eaInput      = document.getElementById('eaUserInput');
+  const eaSendBtn    = document.getElementById('eaSendBtn');
+
+  let eaApplianceSelectionShown = false;
+  let eaSelectedAppliances = new Set();
+
+  function eaNowTime() {
+    const n = new Date();
+    return n.getHours().toString().padStart(2,'0') + ':' +
+           n.getMinutes().toString().padStart(2,'0');
+  }
+
+  function eaAddMessage(text, sender, isHTML=false) {
+    const wrap = document.createElement('div');
+    wrap.className = 'ea-msg ' + (sender === 'bot' ? 'ea-msg-bot' : 'ea-msg-user');
+
+    if (isHTML) {
+      wrap.innerHTML = text;
+    } else {
+      wrap.textContent = text;
+    }
+
+    const t = document.createElement('div');
+    t.className = 'ea-msg-time';
+    t.textContent = eaNowTime();
+    wrap.appendChild(t);
+
+    eaMessages.appendChild(wrap);
+    eaMessages.scrollTop = eaMessages.scrollHeight;
+  }
+
+  function eaShowTyping() {
+    const box = document.createElement('div');
+    box.className = 'ea-typing';
+    box.id = 'ea-typing';
+    box.innerHTML = `
+      <div class="ea-typing-dot"></div>
+      <div class="ea-typing-dot"></div>
+      <div class="ea-typing-dot"></div>
+    `;
+    eaMessages.appendChild(box);
+    eaMessages.scrollTop = eaMessages.scrollHeight;
+  }
+
+  function eaHideTyping() {
+    const el = document.getElementById('ea-typing');
+    if (el) el.remove();
+  }
+
+  function eaBotSend(text, isHTML=false, delay=700) {
+    eaShowTyping();
+    setTimeout(() => {
+      eaHideTyping();
+      eaAddMessage(text, 'bot', isHTML);
+    }, delay);
+  }
+
+  function eaInitChat() {
+    eaMessages.innerHTML = '';
+    eaBotSend("Hi! I'm your Energy Assistant. I can help you understand your usage and suggest better times to run heavy appliances.");
+    setTimeout(() => {
+      eaBotSend("First, select the appliances you use most often. I'll recommend the best hours based on your consumption pattern.");
+      setTimeout(() => {
+        eaShowApplianceSelection();
+      }, 900);
+    }, 900);
+  }
+
+  function eaShowApplianceSelection() {
+    if (eaApplianceSelectionShown) return;
+    eaApplianceSelectionShown = true;
+
+    const html = `
+      <div class="ea-appliance-card">
+        <h6>Select the appliances you use daily:</h6>
+        <div class="ea-appliance-grid" id="eaApplianceGrid">
+          ${eaApplianceItem('Washing Machine','🧺')}
+          ${eaApplianceItem('Internet Router','🌐')}
+          ${eaApplianceItem('Vacuum','🧹')}
+          ${eaApplianceItem('Dishwasher','🍽️')}
+          ${eaApplianceItem('Boiler','🔥')}
+          ${eaApplianceItem('Air Conditioner','❄️')}
+          ${eaApplianceItem('Iron','🧺')}
+          ${eaApplianceItem('Water Heater','🚿')}
+        </div>
+        <button class="ea-appliance-submit" id="eaApplianceSubmit">
+          Submit selection
+        </button>
+      </div>
+    `;
+    eaBotSend(html, true, 400);
+
+    setTimeout(() => {
+      const grid = document.getElementById('eaApplianceGrid');
+      if (!grid) return;
+      grid.querySelectorAll('.ea-appliance-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const name = item.getAttribute('data-name');
+          if (eaSelectedAppliances.has(name)) {
+            eaSelectedAppliances.delete(name);
+            item.classList.remove('ea-selected');
+          } else {
+            eaSelectedAppliances.add(name);
+            item.classList.add('ea-selected');
+          }
+        });
+      });
+
+      const submitBtn = document.getElementById('eaApplianceSubmit');
+      if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
+          if (eaSelectedAppliances.size === 0) {
+            eaBotSend("Try selecting at least one appliance so I can tailor the schedule for you.");
+            return;
+          }
+          eaShowRecommendations();
+        });
+      }
+    }, 900);
+  }
+
+  function eaApplianceItem(name, icon) {
+    return `
+      <div class="ea-appliance-item" data-name="${name}">
+        <span>${icon}</span>
+        <strong>${name}</strong>
+      </div>
+    `;
+  }
+
+  function eaShowRecommendations() {
+    const list = Array.from(eaSelectedAppliances);
+    eaBotSend("Great, got it! Based on your typical pattern in this account, here are some suggested windows to run them.", false, 700);
+
+    setTimeout(() => {
+      let html = `
+        <div class="ea-reco-card">
+          <h6><i class="bi bi-lightbulb-fill text-warning"></i> Recommended schedule</h6>
+      `;
+
+      list.forEach(name => {
+        let suggestion = "Use during off-peak hours (after 10pm or before 7am) when possible.";
+        if (name.includes("Washing")) suggestion = "Best between 11:00pm–6:00am to take advantage of lower load on the grid.";
+        if (name.includes("Air Conditioner")) suggestion = "Keep at 24–25°C and avoid turning it on and off repeatedly. Prefer 10:00pm–6:00am.";
+        if (name.includes("Iron")) suggestion = "Batch your ironing once a week in the late evening rather than short sessions every day.";
+        if (name.includes("Boiler") || name.includes("Water Heater")) suggestion = "Limit continuous operation; schedule showers outside of your peak usage hours shown in the chart.";
+
+        html += `
+          <div class="ea-reco-item">
+            <span>•</span>
+            <div>${name}: ${suggestion}</div>
+          </div>
+        `;
+      });
+
+      html += `
+          <div class="mt-2 text-muted">
+            <small>Tip: The more you use the dashboard, the easier it is to match recommendations with your real peak days.</small>
+          </div>
+        </div>
+      `;
+
+      eaBotSend(html, true, 500);
+    }, 1200);
+  }
+
+  function eaHandleUserSend() {
+    const text = eaInput.value.trim();
+    if (!text) return;
+    eaAddMessage(text, 'user');
+    eaInput.value = '';
+
+    // simple reply – you can later connect this to a real backend/chatbot
+    eaBotSend("Thanks for your question. For now I'm focused on scheduling heavy appliances, but future versions will answer billing and tariff questions too.");
+  }
+
+  eaChatToggle.addEventListener('click', () => {
+    eaChatWindow.classList.toggle('ea-open');
+    if (eaChatWindow.classList.contains('ea-open') && eaMessages.children.length === 0) {
+      eaInitChat();
+    }
+  });
+
+  eaChatClose.addEventListener('click', () => {
+    eaChatWindow.classList.remove('ea-open');
+  });
+
+  eaSendBtn.addEventListener('click', eaHandleUserSend);
+  eaInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') eaHandleUserSend();
+  });
+</script>
+
+</body>
+</html>
